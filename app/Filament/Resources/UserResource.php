@@ -40,6 +40,15 @@ class UserResource extends Resource
                 Forms\Components\Checkbox::make('is_admin')
                     ->label('Administrateur')
                     ->default(false),
+
+                // Ajouter une option pour sélectionner le rôle de l'utilisateur (entreprise, salarié)
+                Forms\Components\Select::make('role')
+                    ->label('Rôle')
+                    ->options([
+                        'entreprise' => 'Entreprise',
+                        'salarie' => 'Salarié',
+                    ])
+                    ->required(),
             ]);
     }
 
@@ -97,13 +106,25 @@ class UserResource extends Resource
     // Méthode après la création de l'utilisateur pour assigner un rôle
     public static function afterCreate($user)
     {
-        // Si l'utilisateur est marqué comme administrateur dans le formulaire
-        if ($user->is_admin) {
-            $adminRole = Role::findByName('admin'); // Récupère le rôle admin
-            $user->assignRole($adminRole); // Attribue le rôle admin
+        // Vérifier le rôle sélectionné et assigner le rôle approprié
+        if ($user->role === 'entreprise') {
+            $role = Role::findByName('entreprise');
+            $user->assignRole($role);
+
+            // Si l'utilisateur est une entreprise, il peut ajouter des salariés
+            // Vous pouvez mettre en place une logique pour gérer les salariés ici
+        } elseif ($user->role === 'salarie') {
+            $role = Role::findByName('salarie');
+            $user->assignRole($role);
         } else {
-            // Optionnellement, attribuer un rôle utilisateur par défaut
-            $user->assignRole('user');
+            $role = Role::findByName('user');
+            $user->assignRole($role);
+        }
+
+        // Assigner un rôle admin si 'is_admin' est coché
+        if ($user->is_admin) {
+            $adminRole = Role::findByName('admin');
+            $user->assignRole($adminRole);
         }
     }
 }

@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Columns\BadgeColumn; // Importer BadgeColumn
 
 class TeamResource extends Resource
 {
@@ -55,18 +56,18 @@ class TeamResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->label('Description')
                     ->limit(50),
-
-                Tables\Columns\TextColumn::make('team_type')
+    
+                // Remplacer TextColumn par BadgeColumn
+                BadgeColumn::make('team_type')
                     ->label('Type d\'équipe')
-                    ->enum([
-                        'free' => 'Gratuit',
-                        'premium' => 'Premium',
-                        'enterprise' => 'Entreprise',
+                    ->getStateUsing(fn($record) => $record->team_type)  // Récupère l'état 'team_type'
+                    ->colors([
+                        'free' => 'success',   // couleur pour 'free'
+                        'premium' => 'warning', // couleur pour 'premium'
+                        'enterprise' => 'danger', // couleur pour 'enterprise'
                     ]),
             ])
-            ->filters([
-                // Ajouter des filtres si nécessaire
-            ])
+            ->filters([/* Ajouter des filtres si nécessaire */])
             ->actions([
                 EditAction::make(),
             ])
