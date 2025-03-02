@@ -2,25 +2,28 @@
 
 namespace App\Jobs;
 
-use App\Imports\LeadsImport; // Assurez-vous que cette classe est correctement importée
+use App\Imports\LeadsImport;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
-use Filament\Notifications\Notification;
-use Maatwebsite\Excel\Facades\Excel; // Import de la façade Excel
-use Exception;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 class ImportLeads implements ShouldQueue
 {
-    use Queueable;
-    
-    protected $file;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    protected $filePath;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($file)
+    public function __construct($filePath)
     {
-        $this->file = $file;
+        $this->filePath = storage_path('app/public/' . $filePath); // Corrige le chemin
     }
 
     /**
@@ -29,21 +32,15 @@ class ImportLeads implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Logique d'importation
-            Excel::import(new LeadsImport, $this->file);
+            if (!file_exists($this->filePath)) {
+                throw new \Exception("Le fichier CSV n'existe pas : " . $this->filePath);
+            }
 
-            // Notification de succès
-            Notification::make()
-                ->title('Importation réussie')
-                ->success()
-                ->send();
-        } catch (Exception $e) {
-            // Notification d'erreur avec le message d'exception
-            Notification::make()
-                ->title('Erreur lors de l\'importation')
-                ->danger()
-                ->body($e->getMessage()) // Ajoute le message d'erreur spécifique
-                ->send();
+            Excel::import(new LeadsImport, $this->filePath); // Exécute l'import
+
+            Log::info("Importation réussie du fichier : " . $this->filePath);
+        } catch (\Exception $e) {
+            Log::error('Erreur d\'importation des leads : ' . $e->getMessage());
         }
     }
 }

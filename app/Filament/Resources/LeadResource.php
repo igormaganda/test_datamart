@@ -32,33 +32,34 @@ class LeadResource extends Resource
                 ->label('Nom du lead')
                 ->required()
                 ->maxLength(255),
-
+    
             Forms\Components\TextInput::make('email')
                 ->label('Email')
                 ->email()
                 ->required()
                 ->maxLength(255),
-
+    
             Forms\Components\TextInput::make('phone')
                 ->label('Numéro de téléphone')
                 ->required()
                 ->maxLength(20),
-
+    
             Forms\Components\TextInput::make('company')
                 ->label('Entreprise'),
-                Forms\Components\FileUpload::make('import_file')
+    
+                Forms\Components\FileUpload::make('csv_filename')
                 ->label('Importer des leads')
-                ->acceptedFileTypes(['application/vnd.ms-excel', 'text/csv'])
-                ->required(false) // Le fichier n'est pas obligatoire, si vous voulez le rendre obligatoire, définissez-le sur true
+                ->acceptedFileTypes(['application/vnd.ms-excel', 'text/csv', 'text/plain'])
+                ->directory('leads_imports') // Stocke le fichier dans storage/app/public/leads_imports
+                ->required(false)
                 ->afterStateUpdated(function ($state) {
                     if ($state) {
-                        // Traiter l'importation du fichier ici
-                        // Par exemple, vous pouvez utiliser un job pour traiter le fichier CSV
-                        ImportLeads::dispatch($state); // On passe le chemin du fichier à votre job
+                        ImportLeads::dispatch($state); 
                     }
-                }),
+                }),            
         ]);
     }
+    
 
     // Définition des colonnes pour la table
     public static function table(Table $table): Table
@@ -69,28 +70,28 @@ class LeadResource extends Resource
                     ->label('Nom du lead')
                     ->searchable()
                     ->sortable(),
-
+    
                 TextColumn::make('email')
                     ->label('Email')
                     ->searchable()
                     ->sortable(),
-
+    
                 TextColumn::make('phone')
                     ->label('Numéro de téléphone')
                     ->sortable(),
-
+    
                 TextColumn::make('company')
                     ->label('Entreprise'),
-
-                BooleanColumn::make('is_important')
-                    ->label('Lead important')
+    
+                TextColumn::make('csv_filename') // 👉 Ajout du champ pour afficher le fichier source
+                    ->label('Fichier CSV')
                     ->sortable(),
-
+    
                 TextColumn::make('created_at')
                     ->label('Date de création')
                     ->dateTime(),
             ])
-            ->filters([/* Ajouter des filtres si nécessaire */])
+            ->filters([])
             ->actions([
                 EditAction::make(),
             ])
@@ -100,6 +101,7 @@ class LeadResource extends Resource
                 ]),
             ]);
     }
+    
 
     // Ajouter des relations si nécessaire
     public static function getRelations(): array
